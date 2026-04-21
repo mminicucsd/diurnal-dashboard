@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>April 6 Air Quality Event — Tijuana River Corridor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg:       #0d0f12;
+  --surface:  #141820;
+  --surface2: #1c2230;
+  --border:   rgba(100,160,255,0.12);
+  --accent:   #3b82f6;
+  --accent2:  #10b981;
+  --danger:   #ef4444;
+  --warning:  #f59e0b;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;overflow-x:hidden}
+
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:100;background:rgba(13,15,18,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;gap:2rem;height:52px}
+.nav-brand{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.04em;white-space:nowrap}
+.nav-links{display:flex;gap:1.5rem;list-style:none;flex:1}
+.nav-links a{font-size:12px;color:var(--muted);text-decoration:none;letter-spacing:.04em;text-transform:uppercase;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-badge{font-family:var(--mono);font-size:11px;color:var(--accent2);border:1px solid rgba(16,185,129,.3);padding:2px 8px;border-radius:3px;margin-left:auto;white-space:nowrap}
+
+/* ── HERO ── */
+.hero{padding:5rem 2rem 3rem;max-width:900px;margin:0 auto}
+.hero-eyebrow{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem}
+.hero-eyebrow::before{content:'';display:block;width:32px;height:1px;background:var(--accent)}
+h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:300;line-height:1.15;letter-spacing:-.02em;margin-bottom:1.25rem}
+h1 strong{font-weight:600;color:var(--accent)}
+.hero-desc{font-size:16px;color:var(--muted);font-weight:300;max-width:640px;margin-bottom:2rem;line-height:1.7}
+.hero-meta{display:flex;flex-wrap:wrap;gap:1.5rem;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.hero-meta span{display:flex;align-items:center;gap:.4rem}
+.hero-meta span::before{content:'//';color:var(--accent);opacity:.5}
+
+/* ── SECTION ── */
+section{padding:3rem 2rem;max-width:1100px;margin:0 auto}
+.section-header{display:flex;align-items:baseline;gap:1rem;margin-bottom:1.75rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
+.section-num{font-family:var(--mono);font-size:11px;color:var(--accent);opacity:.6;min-width:28px}
+.section-title{font-size:1.1rem;font-weight:500;letter-spacing:-.01em}
+.section-sub{font-size:12px;color:var(--muted);margin-left:auto;font-family:var(--mono)}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1.25rem 1.5rem}
+.card-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.4rem}
+.card-value{font-size:1.5rem;font-weight:500;letter-spacing:-.02em}
+.card-unit{font-size:11px;color:var(--muted);margin-top:2px}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;margin-bottom:1.5rem}
+
+/* ── CHART WRAPPER ── */
+.chart-wrap{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1rem;margin-bottom:1rem}
+.chart-wrap canvas{display:block}
+.chart-title{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:.75rem;letter-spacing:.04em}
+
+/* ── MAP ── */
+.map-wrap{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+#map-canvas{display:block;width:100%}
+.map-tip{position:absolute;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:11px;line-height:1.6;pointer-events:none;display:none;max-width:210px;z-index:10;color:var(--text)}
+.map-legend{position:absolute;bottom:12px;right:12px;background:rgba(20,24,32,.92);border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:10px;line-height:1.9;font-family:var(--mono)}
+.map-legend .lr{display:flex;align-items:center;gap:6px}
+.map-legend .ld{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:6px}
+table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+th{text-align:left;padding:10px 12px;font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:500}
+td{padding:8px 12px;border-bottom:1px solid rgba(100,160,255,.05);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(59,130,246,.04)}
+.tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;font-family:var(--mono)}
+.tag-rapid{background:rgba(16,185,129,.15);color:#6ee7b7}
+.tag-slow{background:rgba(245,158,11,.15);color:#fcd34d}
+.tag-remote{background:rgba(59,130,246,.15);color:#93c5fd}
+.tag-na{background:rgba(100,116,139,.15);color:var(--muted)}
+.r2-good{color:#6ee7b7}
+.r2-ok{color:#fcd34d}
+.r2-poor{color:#fca5a5}
+.pm-high{color:#fca5a5;font-weight:600}
+.pm-mid{color:#fcd34d}
+.pm-low{color:var(--text)}
+
+/* ── SURVEY CARDS ── */
+.survey-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem}
+.s-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1rem 1.1rem;border-left:3px solid transparent}
+.s-card.high{border-left-color:var(--danger)}
+.s-card.mid{border-left-color:var(--warning)}
+.s-card.low{border-left-color:var(--accent)}
+.s-card-head{display:flex;align-items:baseline;gap:.6rem;margin-bottom:.5rem}
+.s-card-sensor{font-family:var(--mono);font-weight:600;font-size:13px}
+.s-card-peak{font-size:11px;color:var(--muted)}
+.s-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:.5rem}
+.s-tag{font-size:10px;padding:1px 6px;border-radius:3px;font-family:var(--mono)}
+.s-tag.risk{background:rgba(239,68,68,.15);color:#fca5a5}
+.s-tag.protect{background:rgba(16,185,129,.15);color:#6ee7b7}
+.s-tag.neutral{background:rgba(100,116,139,.15);color:var(--muted)}
+.s-insight{font-size:11px;color:var(--muted);line-height:1.55;border-left:2px solid rgba(59,130,246,.3);padding-left:7px;margin-top:.4rem}
+
+/* ── FINDINGS BOX ── */
+.finding{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:1rem 1.25rem;margin-bottom:.75rem;border-left:3px solid var(--accent2)}
+.finding-label{font-family:var(--mono);font-size:10px;color:var(--accent2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem}
+.finding p{font-size:13px;color:var(--muted);line-height:1.6}
+.finding p strong{color:var(--text);font-weight:500}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--border);padding:2rem;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:3rem}
+footer a{color:var(--accent);text-decoration:none}
+
+/* ── LEGEND ROW ── */
+.legend-row{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:.75rem;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.legend-row span{display:flex;align-items:center;gap:5px}
+.lsw{width:12px;height:3px;border-radius:1px;flex-shrink:0}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;margin-bottom:1.25rem;border-bottom:1px solid var(--border)}
+.tab-btn{background:none;border:none;color:var(--muted);padding:8px 16px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+@media(max-width:600px){
+  nav{padding:0 1rem;gap:1rem}
+  .nav-links{display:none}
+  section{padding:2rem 1rem}
+  .hero{padding:3rem 1rem 2rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">AIR QUALITY · CHULA VISTA</div>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#diurnal">Diurnal</a></li>
+    <li><a href="#event">April 6 Event</a></li>
+    <li><a href="#source">Source</a></li>
+    <li><a href="#survey">Survey</a></li>
+    <li><a href="#methods">Methods</a></li>
+  </ul>
+  <div class="nav-badge">April 2026 · San Diego</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Capstone Research · UCSD / SDSU</div>
+  <h1>The <strong>April 6</strong> Pollution Event<br>and the Tijuana River Corridor</h1>
+  <p class="hero-desc">A 13-sensor AirGradient low-cost network detected a significant PM2.5 and H₂S pollution event on April 6, 2026 in the South Bay / Chula Vista area. This dashboard presents the diurnal analysis, temporal rise and decay fitting, source back-trajectory estimation, and household survey context.</p>
+  <div class="hero-meta">
+    <span>13 AirGradient sensors</span>
+    <span>1 Quant AQ trailer</span>
+    <span>April 2–13, 2026 baseline</span>
+    <span>Ciuzas et al. (2015) methodology</span>
+  </div>
+</div>
+
+<!-- 1. OVERVIEW -->
+<section id="overview">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <span class="section-title">Event Overview</span>
+    <span class="section-sub">April 6, 2026</span>
+  </div>
+
+  <div class="metric-grid">
+    <div class="card"><div class="card-label">Peak PM2.5</div><div class="card-value" style="color:#fca5a5">76.2</div><div class="card-unit">µg/m³ at AG-15 · 2.2× EPA threshold</div></div>
+    <div class="card"><div class="card-label">H₂S peak</div><div class="card-value" style="color:#fcd34d">946</div><div class="card-unit">ppb at 1:00 AM · Quant AQ trailer</div></div>
+    <div class="card"><div class="card-label">First sensor hit</div><div class="card-value">AG-19</div><div class="card-unit">2:00 AM · co-located with trailer</div></div>
+    <div class="card"><div class="card-label">Sensors exceeded EPA</div><div class="card-value" style="color:#fca5a5">2</div><div class="card-unit">of 13 sensors above 35 µg/m³ daily avg</div></div>
+    <div class="card"><div class="card-label">Wind direction</div><div class="card-value">248°</div><div class="card-unit">WSW · 2.3 m/s average</div></div>
+    <div class="card"><div class="card-label">Source distance</div><div class="card-value">~0.5 mi</div><div class="card-unit">Tijuana River hotspot · SSW of trailer</div></div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-label">Key finding</div>
+    <p>The April 6 event shows two distinct phases: an <strong>overnight H₂S pulse</strong> (midnight–7am) originating from a known hotspot in the Tijuana River ~0.5 mi SSW of the trailer, followed by an <strong>afternoon PM2.5 event</strong> (11am–6pm) driven by WSW winds carrying emissions from the western estuary and river mouth segment directly over the sensor cluster.</p>
+  </div>
+  <div class="finding" style="border-left-color:var(--warning)">
+    <div class="finding-label" style="color:var(--warning)">Note on remote sensors</div>
+    <p>AG-5 (40.4 mi north, San Marcos) and AG-10 (30.5 mi north, Rancho Bernardo) recorded elevated PM2.5 on April 6 but are almost certainly reflecting a <strong>separate regional event</strong> unrelated to the Tijuana River source. All spatial analysis focuses on the local cluster (≤5 mi from trailer).</p>
+  </div>
+</section>
+
+<!-- 2. DIURNAL -->
+<section id="diurnal">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <span class="section-title">Diurnal Profiles — Baseline vs. April 6</span>
+    <span class="section-sub">Baseline: Apr 2–13 excl. Apr 6</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('diurnal','pm25')">PM2.5</button>
+    <button class="tab-btn" onclick="showTab('diurnal','pm1')">PM1</button>
+    <button class="tab-btn" onclick="showTab('diurnal','pm03')">PM0.3</button>
+  </div>
+
+  <div style="margin-bottom:.75rem">
+    <label style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:.75rem">Sensor:</label>
+    <select id="diurnal-sensor" onchange="renderDiurnal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;font-family:var(--mono);font-size:11px;border-radius:3px"></select>
+  </div>
+
+  <div class="legend-row">
+    <span><span class="lsw" style="background:#3b82f6"></span>Baseline avg (Apr 2–13)</span>
+    <span><span class="lsw" style="background:#f59e0b"></span>April 6 event</span>
+    <span><span class="lsw" style="background:#888;opacity:.4;width:20px;height:3px"></span>H₂S level (ppb, right axis)</span>
+    <span><span class="lsw" style="background:#ef4444;opacity:.5"></span>EPA threshold</span>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title" id="diurnal-chart-title">PM2.5 DIURNAL PROFILE</div>
+    <div style="position:relative;height:300px"><canvas id="diurnal-chart" role="img" aria-label="Diurnal PM concentration profile comparing baseline and April 6 event"></canvas></div>
+  </div>
+  <div id="diurnal-note" style="font-size:12px;color:var(--muted);padding:.5rem .75rem;background:var(--surface2);border-radius:4px;font-family:var(--mono);border-left:2px solid var(--accent)"></div>
+</section>
+
+<!-- 3. APRIL 6 EVENT PARAMETERS -->
+<section id="event">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <span class="section-title">Temporal Rise &amp; Decay Parameters</span>
+    <span class="section-sub">Ciuzas et al. (2015) methodology</span>
+  </div>
+
+  <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;max-width:700px">Each sensor's April 6 PM2.5 time series was fit with a sigmoidal rise function and double exponential decay (Ciuzas et al. 2015). Rise slope <code style="color:var(--accent2);font-family:var(--mono)">b</code> quantifies onset speed; decay rates <code style="color:var(--accent2);font-family:var(--mono)">d1</code> and <code style="color:var(--accent2);font-family:var(--mono)">d2</code> describe fast and slow clearance phases.</p>
+
+  <div class="chart-wrap" style="margin-bottom:1rem">
+    <div class="chart-title">PEAK ARRIVAL HOUR VS. PEAK PM2.5 — PLUME PROPAGATION SEQUENCE</div>
+    <div style="position:relative;height:280px"><canvas id="bubble-chart" role="img" aria-label="Bubble chart of sensor peak arrival hour vs peak PM2.5"></canvas></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Sensor</th><th>Peak hour</th><th>Peak PM2.5</th><th>Dist. trailer</th>
+          <th>Rise b (h)</th><th>Rise R²</th><th>Episode</th>
+          <th>d1 (h⁻¹)</th><th>d2 (h⁻¹)</th><th>Decay R²</th>
+        </tr>
+      </thead>
+      <tbody id="param-tbody"></tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:.75rem;font-size:11px;color:var(--muted);font-family:var(--mono)">
+    Rise b: smaller = faster onset. Episode type per Ciuzas et al.: Rapid b ≤ 0.5 h, Slow b > 0.5 h. R² colour: <span class="r2-good">≥0.85 good</span> / <span class="r2-ok">0.60–0.84 moderate</span> / <span class="r2-poor">&lt;0.60 poor</span>
+  </div>
+</section>
+
+<!-- 4. SOURCE MAP -->
+<section id="source">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <span class="section-title">Source Back-Trajectory — Tijuana River Corridor</span>
+    <span class="section-sub">Wind: 248° WSW · 2.3 m/s</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:1.25rem">
+    <div class="finding" style="border-left-color:var(--danger)">
+      <div class="finding-label" style="color:var(--danger)">Overnight (0–7h)</div>
+      <p>Eastern river hotspot (0.45 mi SSW of trailer) active. H₂S 946 ppb at 1am. AG-19 peaks first at 2am.</p>
+    </div>
+    <div class="finding" style="border-left-color:var(--warning)">
+      <div class="finding-label" style="color:var(--warning)">Afternoon (11–18h)</div>
+      <p>Western estuary (bearing 275° from trailer) aligns with WSW wind. AG-15 peaks at 76 µg/m³ at 3pm.</p>
+    </div>
+    <div class="finding" style="border-left-color:var(--accent)">
+      <div class="finding-label">Linear source</div>
+      <p>The river corridor is a distributed source. Different segments impact different sensors as wind shifts through the day.</p>
+    </div>
+  </div>
+
+  <div class="map-wrap">
+    <canvas id="map-canvas" role="img" aria-label="Spatial map of sensor network with Tijuana River corridor, plume cones, and back-trajectory rays"></canvas>
+    <div class="map-tip" id="map-tip"></div>
+    <div class="map-legend">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px;letter-spacing:.06em">SOURCES</div>
+      <div class="lr"><span class="ld" style="background:#10b981"></span>River corridor</div>
+      <div class="lr"><span class="ld" style="background:rgba(239,68,68,.4);border:1.5px solid #ef4444"></span>Known hotspot</div>
+      <div class="lr"><span class="ld" style="background:#D85A30;border:1.5px solid #712B13"></span>Trailer / AG-19</div>
+      <div style="margin-top:4px;border-top:1px solid var(--border);padding-top:4px;font-size:9px;color:var(--muted)">
+        Bubble = peak PM2.5<br>Dashed = back-rays (upwind 248°)
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. SURVEY -->
+<section id="survey">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <span class="section-title">Household Survey Context</span>
+    <span class="section-sub">9 of 13 sensors surveyed</span>
+  </div>
+
+  <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;max-width:700px">Survey respondents reported building type, ventilation, stove type, window behavior, and occupancy. These characteristics help explain variation in PM2.5 readings across sensors on April 6 — particularly the contrast between outdoor infiltration and indoor source contributions.</p>
+
+  <div class="survey-grid" id="survey-grid"></div>
+</section>
+
+<!-- 6. METHODS -->
+<section id="methods">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <span class="section-title">Methods &amp; References</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="card">
+      <div class="card-label">Baseline period</div>
+      <p style="font-size:13px;color:var(--muted);margin-top:.4rem">April 2–13, 2026 excluding April 6. Hourly averages of 5-minute AirGradient readings grouped by hour of day per sensor.</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Rise model — Ciuzas et al. (2015) Eq. 1</div>
+      <p style="font-size:12px;color:var(--muted);margin-top:.4rem;font-family:var(--mono)">Ct = (Cmax−Cmin)/(1+exp(−(t−t₀)/b)) + Cmin<br>b = slope (h); smaller b = faster onset</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Decay model — Ciuzas et al. (2015) Eq. 3</div>
+      <p style="font-size:12px;color:var(--muted);margin-top:.4rem;font-family:var(--mono)">Ct = C1·exp(−d1·t) + C2·exp(−d2·t)<br>d1 = fast phase; d2 = slow residual (h⁻¹)</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Source back-trajectory</div>
+      <p style="font-size:13px;color:var(--muted);margin-top:.4rem">Weighted centroid of 1-hour upwind projections from each local sensor, weighted by peak PM2.5 × (1/peak_hour). Wind from Quant AQ trailer anemometer (248°, 2.3 m/s).</p>
+    </div>
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-label">Citation</div>
+      <p style="font-size:13px;color:var(--muted);margin-top:.4rem">Ciuzas, D., Prasauskas, T., Krugly, E., et al. (2015). Characterization of indoor aerosol temporal variations for the real-time management of indoor air quality. <em>Atmospheric Environment</em>, 118, 107–117. <a href="https://doi.org/10.1016/j.atmosenv.2015.07.044" style="color:var(--accent)">doi:10.1016/j.atmosenv.2015.07.044</a></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Air Quality Capstone Research · San Diego / Chula Vista · 2026 &nbsp;|&nbsp; Data: AirGradient &amp; Quant AQ · <a href="#">View source notebook</a></p>
+</footer>
+
+<script>
+// ────────────────────────────────────────────────────────────
+// DATA
+// ────────────────────────────────────────────────────────────
+const THRESHOLDS = {pm25:35, pm1:20, pm03:2000};
+const LABELS = {pm25:'PM2.5 (µg/m³)', pm1:'PM1 (µg/m³)', pm03:'PM0.3 count'};
+const H2S = [452.99,945.99,97.0,321.2,45.86,394.23,49.01,535.32,55.4,7.15,7.95,4.56,1.7,1.17,1.17,1.26,0.33,0,1.31,0,0.61,0.48,0.78,442.75];
+
+const BASELINE = {"AG-10":[5.47,7.08,9.27,10.72,10.49,8.42,7.06,6.17,4.16,3.72,2.98,3.53,5.01,7.26,7.69,6.56,4.84,4.07,4.25,3.1,2.6,4.28,3.77,3.85],"AG-11":[0.3,0.25,0.23,0.24,0.32,0.39,0.44,0.5,0.64,0.35,0.79,1.1,0.6,0.11,0.04,0.15,0.46,0.58,0.41,1.46,0.57,0.32,0.28,0.28],"AG-12":[0.08,0.05,0.04,0.02,0,0.02,0.18,0.13,0.11,0.92,6.98,3.27,1.49,0.77,0.81,0.4,0.51,0.37,1.16,1.66,1.56,0.8,0.23,0.03],"AG-15":[0.31,0.29,0.21,0.21,0.37,0.81,4.01,18.37,22.41,18.92,7.13,10.09,10.5,1.65,11.25,23.32,11.89,5.95,18.71,14.62,4.39,0.85,0.35,0.36],"AG-17":[0.72,0.76,0.66,0.56,0.47,0.37,0.68,1.76,2.05,1.77,1.41,1.15,0.93,0.6,0.3,0.2,0.11,0.09,0.1,0.16,0.19,0.18,0.26,0.36],"AG-18":[1.48,0.96,0.8,6.37,2.39,1.25,1.06,1.16,1.54,3.25,10.93,5.32,1.66,0.97,0.55,0.49,0.36,0.34,0.73,0.72,0.64,1.32,0.9,2.3],"AG-19":[2.15,2.02,2.5,2.66,3.82,5.21,5.81,7.52,7.09,4.92,3.7,2.81,1.33,0.68,0.5,0.44,0.15,0.12,0.25,0.32,0.53,1.46,1.29,3.26],"AG-2":[1.06,0.73,0.6,0.48,0.38,0.33,0.48,1.12,2.98,2.02,1.87,3.19,4.85,3.02,1.83,1.17,1.92,9.1,8.75,7.3,3.53,1.87,2.14,1.69],"AG-3":[1.76,1.97,2.72,4.87,5.17,7.52,8.03,7.75,7.03,5.96,4.16,3.02,2.28,1.53,0.93,1.01,0.6,2.5,0.51,0.4,0.55,0.96,0.88,1.49],"AG-5":[0.77,0.76,0.71,0.8,0.84,0.89,0.95,1.21,2.44,1.73,2.15,5.58,25.46,12.32,2.6,0.83,0.43,0.54,1.3,4.89,0.93,0.94,0.65,0.62],"AG-7":[2.78,4.89,32.55,16.87,4.53,2.45,3.06,4.46,5.23,7.79,12.26,3.08,1.93,1.41,0.94,0.78,0.63,1.39,5.53,3.35,1.35,1.39,22.94,9.85],"AG-9":[4.6,3.68,3.43,3.51,4.15,5.75,6.33,6.35,10.73,66.13,11.66,7.3,4.92,2.89,1.85,1.94,2.85,0.97,10.14,44.79,18.07,14.61,13.36,6.93]};
+const EVENT = {"AG-10":[13.03,15.19,16.4,22.41,21.57,17.25,14.41,6.55,2.34,1.3,11.14,34.91,36.26,36.07,20.42,9.22,19.57,26.19,12.66,5.31,1.96,1.47,2.31,8.56],"AG-11":[0.21,0.66,0.98,1.12,1.04,1.04,0.97,0.93,0.62,0,0.12,0,0,0.03,0.11,1.13,1.11,1.75,3.07,1.88,1.11,0.83,0.75,0.58],"AG-12":[0,0.01,0.01,0.03,0.03,0.03,0,0.01,0,0,0.02,0.01,0.56,0.02,0,0.07,0.3,0.48,0.11,3.5,1.46,0.53,0.26,0.3],"AG-15":[0.15,0.37,0.38,0.23,0.29,0.33,0.92,4.3,3.06,1.03,0.49,0.23,2.62,1.82,73.56,76.21,29.38,18.16,58.89,15.65,1.98,1.49,1.1,0.62],"AG-17":[0,0,0,0,0,0,0.11,1.57,0.45,0,0,0,0,0.01,0,0.23,0.35,0.51,0.49,0.69,0.73,0.94,1.05,1.47],"AG-18":[0.62,0.25,0.66,0.67,1.16,0.91,0.82,1.17,1.03,2.32,3.02,1.64,0.14,0.02,0.05,1.03,1.31,1.63,4.5,2.26,2.91,2.33,1.83,1.82],"AG-19":[5.49,4.4,10.33,8.89,5.17,4.96,3.26,6.39,0.93,0.44,0.49,0.66,0.13,0.07,0,1.07,1.03,1.41,1.28,1.38,1.5,1.72,1.89,1.91],"AG-2":[2.64,1.53,0.98,1.08,0.78,1.36,1.53,1.08,0.46,5.07,4.21,2.77,1.82,1.07,0.51,0.24,0.42,0.72,2.4,1.61,1.46,1.4,1.35,1.28],"AG-3":[0.05,0.41,0.81,1.15,2.99,2.51,2.82,1.43,1.13,1.38,1.59,1.81,1.12,0.73,0.26,0.5,0.93,1.27,1.52,1.76,1.61,1.96,2.31,2.75],"AG-5":[0,0,0,0,0,0,0,0,0.13,0.26,0.02,3.73,30.85,13.47,0.55,2.3,0.33,0.42,3.59,1.68,1.42,1.58,1.56,2.05],"AG-7":[6.06,5.3,4.84,3.08,3.94,3.12,3.06,2.59,1.71,0.99,0.25,1.01,0.6,0.9,0.86,2.11,2.51,2.57,13.77,2.77,2.94,3.01,3.06,3.08],"AG-9":[1.62,1.36,1.18,1.81,2.44,2.82,2.85,6.94,2.61,0.87,1.12,2.62,0.7,1.58,0.3,1.09,3.0,1.7,1.71,1.73,1.93,2.05,2.84,3.41]};
+
+const PARAMS = [
+  {s:'AG-19',ph:2, pm:10.3,dist:0.01,b:null,  r2r:null, ep:null,    d1:0.343,d2:null, r2d:0.841},
+  {s:'AG-3', ph:4, pm:3.0, dist:4.15,b:0.731,r2r:0.972,ep:'Slow',  d1:0.526,d2:null, r2d:0.345},
+  {s:'AG-9', ph:7, pm:6.9, dist:2.71,b:0.574,r2r:0.930,ep:'Slow',  d1:2.189,d2:null, r2d:0.687},
+  {s:'AG-17',ph:7, pm:1.6, dist:1.66,b:0.102,r2r:1.000,ep:'Rapid', d1:4.728,d2:null, r2d:0.283},
+  {s:'AG-2', ph:9, pm:5.1, dist:10.65,b:0.100,r2r:0.808,ep:'Rapid',d1:0.592,d2:null, r2d:0.790},
+  {s:'AG-5', ph:12,pm:30.8,dist:40.43,b:0.100,r2r:1.000,ep:'Rapid',d1:1.143,d2:null, r2d:0.965},
+  {s:'AG-10',ph:12,pm:36.3,dist:30.49,b:0.100,r2r:0.639,ep:'Rapid',d1:0.212,d2:0.212,r2d:0.752},
+  {s:'AG-15',ph:15,pm:76.2,dist:0.90, b:0.126,r2r:0.998,ep:'Rapid',d1:5.000,d2:0.272,r2d:0.706},
+  {s:'AG-11',ph:18,pm:3.1, dist:2.09, b:0.873,r2r:0.686,ep:'Slow', d1:0.672,d2:null, r2d:0.997},
+  {s:'AG-18',ph:18,pm:4.5, dist:22.77,b:0.458,r2r:0.546,ep:'Rapid',d1:5.000,d2:0.082,r2d:0.912},
+  {s:'AG-7', ph:18,pm:13.8,dist:1.33, b:0.120,r2r:0.712,ep:'Rapid',d1:5.000,d2:null, r2d:0.999},
+  {s:'AG-12',ph:19,pm:3.5, dist:2.66, b:0.178,r2r:0.956,ep:'Rapid',d1:0.997,d2:null, r2d:0.997},
+];
+
+const SURVEY_DATA = {
+  'AG-2': {building:'House',floor:2,stove:'Gas',exhaust:true,ac:'Central AC',purifier:false,occupants:3,smoker:false,window_h:20,insight:'Windows open ~20h/day — highest window exposure in survey. Located in Coronado, 10.6 mi NNW; peak at hour 9 reflects delayed regional transport.'},
+  'AG-3': {building:'Condo',floor:2,stove:'Gas',exhaust:true,ac:'Central AC',purifier:false,occupants:3,smoker:false,window_h:20,insight:'Condo with 20h/day window exposure. Early peak at hour 4 may reflect overnight H₂S pulse carried NNE.'},
+  'AG-5': {building:'House',floor:1,stove:'Gas',exhaust:true,ac:'Central AC',purifier:false,occupants:2,smoker:false,window_h:8,insight:'40 mi north in San Marcos — almost certainly a separate regional event, not the Tijuana River plume.'},
+  'AG-7': {building:'House',floor:1,stove:'Gas',exhaust:false,ac:'Fans only',purifier:true,occupants:5,smoker:true,window_h:24,insight:'Only smoker household. Windows open 24h/day with no AC — maximum outdoor exposure. Gas stove without exhaust use compounds indoor sources.'},
+  'AG-9': {building:'Apartment',floor:2,stove:'Gas',exhaust:false,ac:'Fans/windows',purifier:false,occupants:3,smoker:false,window_h:0,insight:'No exhaust fan, no purifier, apartment. Random daytime window openings coincide with the 7am H₂S spike window.'},
+  'AG-10':{building:'House',floor:2,stove:'Gas',exhaust:false,ac:'Central AC',purifier:false,occupants:3,smoker:false,window_h:4,insight:'30 mi north in Rancho Bernardo — almost certainly a separate regional event. Family uses outdoor stove to prevent indoor cooking fumes.'},
+  'AG-11':{building:'School',floor:1,stove:'None',exhaust:false,ac:'Central AC',purifier:true,occupants:10,smoker:false,window_h:0,insight:'School classroom — windows never opened, central AC + purifier. Low peak (3.1 µg/m³) reflects effective building filtration.'},
+  'AG-12':{building:'House',floor:1,stove:'Electric',exhaust:false,ac:'Minisplit',purifier:false,occupants:2,smoker:false,window_h:0.5,insight:'Very low window exposure (0.5h) helps explain low peak despite proximity to source. Electric stove, ductless AC.'},
+  'AG-15':{building:'House',floor:1,stove:'Electric',exhaust:true,ac:'Fans only',purifier:true,occupants:4,smoker:false,window_h:4,insight:'Highest peak (76 µg/m³) despite electric stove + air purifier — confirms outdoor infiltration dominated on Apr 6. Household frequently cooks stir fry (high-heat, high PM2.5 activity) which may explain intra-day outlier spikes beyond the plume alone.'},
+};
+
+const SENSORS_MAP = [
+  {s:'AG-3', lat:32.5724,lon:-117.0197,pm:3.0, ph:4, local:true},
+  {s:'AG-7', lat:32.5780,lon:-117.1077,pm:13.8,ph:18,local:true},
+  {s:'AG-9', lat:32.5502,lon:-117.0476,pm:6.9, ph:7, local:true},
+  {s:'AG-11',lat:32.5785,lon:-117.1228,pm:3.1, ph:18,local:true},
+  {s:'AG-12',lat:32.5807,lon:-117.1323,pm:3.5, ph:19,local:true},
+  {s:'AG-13',lat:32.5748,lon:-117.1263,pm:0,   ph:null,local:true},
+  {s:'AG-15',lat:32.5776,lon:-117.0958,pm:76.2,ph:15,local:true},
+  {s:'AG-17',lat:32.5763,lon:-117.1160,pm:1.6, ph:7, local:true},
+  {s:'AG-19',lat:32.5653,lon:-117.0904,pm:10.3,ph:2, local:true},
+];
+const TRAILER={lat:32.5654,lon:-117.0905};
+const HOTSPOT={lat:32.559183,lon:-117.092575};
+const RIVER=[
+  {lat:32.5760,lon:-117.1700},{lat:32.5740,lon:-117.1580},{lat:32.5720,lon:-117.1500},
+  {lat:32.5700,lon:-117.1420},{lat:32.5680,lon:-117.1320},{lat:32.5660,lon:-117.1230},
+  {lat:32.5630,lon:-117.1130},{lat:32.5610,lon:-117.1050},{lat:32.5592,lon:-117.0926},
+  {lat:32.5570,lon:-117.0830},{lat:32.5540,lon:-117.0750},{lat:32.5500,lon:-117.0680},
+  {lat:32.5450,lon:-117.0630},{lat:32.5430,lon:-117.0620},
+];
+
+// ────────────────────────────────────────────────────────────
+// DIURNAL CHART
+// ────────────────────────────────────────────────────────────
+const SENSORS_DIURNAL = Object.keys(BASELINE).sort();
+let diurnalChart=null;
+let currentPollutant='pm25';
+const HOURS=Array.from({length:24},(_,i)=>i);
+
+function showTab(group, key){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  currentPollutant=key;
+  renderDiurnal();
+}
+
+function renderDiurnal(){
+  const sensor=document.getElementById('diurnal-sensor').value;
+  const thresh=THRESHOLDS[currentPollutant];
+  const base=BASELINE[sensor]||Array(24).fill(0);
+  const evt=EVENT[sensor]||Array(24).fill(0);
+  const maxH2S=Math.max(...H2S);
+  const maxPM=Math.max(...base,...evt)*1.15;
+  document.getElementById('diurnal-chart-title').textContent=LABELS[currentPollutant]+' DIURNAL PROFILE · '+sensor;
+
+  const exceed=evt.filter(v=>v>thresh).length;
+  const peak=Math.max(...evt);
+  const peakH=evt.indexOf(peak);
+  document.getElementById('diurnal-note').textContent=
+    exceed>0
+      ? `${sensor} exceeded the ${LABELS[currentPollutant]} threshold (${thresh}) during ${exceed} hour(s) on April 6. Peak: ${peak.toFixed(1)} at ${peakH}:00.`
+      : `${sensor} stayed below the ${LABELS[currentPollutant]} threshold (${thresh}) throughout April 6.`;
+
+  if(diurnalChart) diurnalChart.destroy();
+  diurnalChart=new Chart(document.getElementById('diurnal-chart'),{
+    data:{labels:HOURS.map(h=>h+'h'),datasets:[
+      {type:'line',label:'Baseline',data:base,borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:2,tension:0.3,pointRadius:0,borderDash:[5,3],yAxisID:'y'},
+      {type:'line',label:'April 6',data:evt,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.06)',borderWidth:2.5,tension:0.3,pointRadius:3,pointBackgroundColor:evt.map(v=>v>thresh?'#ef4444':'#f59e0b'),fill:true,yAxisID:'y'},
+      {type:'bar',label:'H₂S (ppb)',data:H2S.map(v=>Math.max(0,v)),backgroundColor:'rgba(148,163,184,0.15)',yAxisID:'y2'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toFixed(1):''}`}}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:10,family:'IBM Plex Mono'},maxRotation:0,autoSkip:true,maxTicksLimit:12}},
+        y:{title:{display:true,text:LABELS[currentPollutant],color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:10}}},
+        y2:{position:'right',title:{display:true,text:'H₂S (ppb)',color:'#64748b',font:{size:10}},grid:{display:false},ticks:{color:'#64748b',font:{size:10}},max:Math.ceil(maxH2S*1.1)}
+      }
+    },
+    plugins:[{id:'thr',afterDraw(ch){
+      const s=ch.scales['y'];if(!s)return;
+      const py=s.getPixelForValue(thresh);
+      const c=ch.ctx;c.save();c.beginPath();
+      c.moveTo(ch.chartArea.left,py);c.lineTo(ch.chartArea.right,py);
+      c.strokeStyle='rgba(239,68,68,0.5)';c.lineWidth=1;c.setLineDash([4,4]);c.stroke();c.restore();
+    }}]
+  });
+}
+
+const sel=document.getElementById('diurnal-sensor');
+SENSORS_DIURNAL.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+sel.value='AG-15';
+renderDiurnal();
+
+// ────────────────────────────────────────────────────────────
+// BUBBLE CHART
+// ────────────────────────────────────────────────────────────
+function pmColor(pm){
+  if(pm>50)return'#ef4444';if(pm>20)return'#f59e0b';if(pm>5)return'#60a5fa';return'#34d399';
+}
+const bubbleData=PARAMS.map(d=>({x:d.ph,y:d.pm,r:Math.max(5,Math.sqrt(d.pm)*2.5),label:d.s,color:pmColor(d.pm)}));
+new Chart(document.getElementById('bubble-chart'),{
+  type:'bubble',
+  data:{datasets:[{label:'Sensors',data:bubbleData,backgroundColor:bubbleData.map(d=>d.color+'88'),borderColor:bubbleData.map(d=>d.color),borderWidth:1.5}]},
+  options:{responsive:true,maintainAspectRatio:false,layout:{padding:20},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=PARAMS[c.dataIndex];return[d.s,`Peak: ${d.pm} µg/m³ at ${d.ph}:00`,`${d.dist} mi from trailer`];}}}},
+    scales:{
+      x:{title:{display:true,text:'Peak arrival hour',color:'#64748b',font:{size:10,family:'IBM Plex Mono'}},min:-1,max:22,ticks:{color:'#64748b',font:{size:10,family:'IBM Plex Mono'},stepSize:3},grid:{color:'rgba(255,255,255,0.04)'}},
+      y:{title:{display:true,text:'Peak PM2.5 (µg/m³)',color:'#64748b',font:{size:10,family:'IBM Plex Mono'}},min:0,max:90,ticks:{color:'#64748b',font:{size:10,family:'IBM Plex Mono'}},grid:{color:'rgba(255,255,255,0.04)'}}
+    }},
+  plugins:[{id:'lbl',afterDatasetsDraw(ch){
+    const c=ch.ctx;ch.data.datasets[0].data.forEach((pt,i)=>{
+      const m=ch.getDatasetMeta(0);const el=m.data[i];
+      c.fillStyle='#94a3b8';c.font='10px IBM Plex Mono';c.textAlign='center';
+      c.fillText(PARAMS[i].s,el.x,el.y-el.options.radius-5);
+    });
+  }}]
+});
+
+// ────────────────────────────────────────────────────────────
+// PARAMETER TABLE
+// ────────────────────────────────────────────────────────────
+function r2Class(v){if(!v)return'';if(v>=0.85)return'r2-good';if(v>=0.6)return'r2-ok';return'r2-poor';}
+const tbody=document.getElementById('param-tbody');
+PARAMS.forEach(d=>{
+  const epTag=d.ep?`<span class="tag tag-${d.ep.toLowerCase()}">${d.ep}</span>`:`<span class="tag tag-na">—</span>`;
+  const distTag=d.dist>5?`<span class="tag tag-remote">${d.dist} mi</span>`:d.dist+' mi';
+  const pmClass=d.pm>50?'pm-high':d.pm>20?'pm-mid':'pm-low';
+  tbody.innerHTML+=`<tr>
+    <td style="font-weight:600;color:#e2e8f0">${d.s}</td>
+    <td>${d.ph}:00</td>
+    <td class="${pmClass}">${d.pm}</td>
+    <td>${distTag}</td>
+    <td>${d.b??'—'}</td>
+    <td class="${r2Class(d.r2r)}">${d.r2r??'—'}</td>
+    <td>${epTag}</td>
+    <td>${d.d1??'—'}</td>
+    <td>${d.d2??'—'}</td>
+    <td class="${r2Class(d.r2d)}">${d.r2d??'—'}</td>
+  </tr>`;
+});
+
+// ────────────────────────────────────────────────────────────
+// MAP
+// ────────────────────────────────────────────────────────────
+const mapCanvas=document.getElementById('map-canvas');
+const mapTip=document.getElementById('map-tip');
+let hits=[];
+
+function destPt(lat,lon,bearDeg,distKm){
+  const R=6371,d=distKm/R,la1=lat*Math.PI/180,lo1=lon*Math.PI/180,b=bearDeg*Math.PI/180;
+  const la2=Math.asin(Math.sin(la1)*Math.cos(d)+Math.cos(la1)*Math.sin(d)*Math.cos(b));
+  const lo2=lo1+Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(la1),Math.cos(d)-Math.sin(la1)*Math.sin(la2));
+  return{lat:la2*180/Math.PI,lon:lo2*180/Math.PI};
+}
+
+function drawMap(){
+  const dpr=window.devicePixelRatio||1;
+  const W=mapCanvas.parentElement.clientWidth;
+  const H=Math.round(W*0.55);
+  mapCanvas.width=W*dpr;mapCanvas.height=H*dpr;
+  mapCanvas.style.width=W+'px';mapCanvas.style.height=H+'px';
+  mapCanvas.parentElement.style.height=H+'px';
+  const ctx=mapCanvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  hits=[];
+  const minLat=32.51,maxLat=32.62,minLon=-117.22,maxLon=-116.97;
+  function proj(lat,lon){return{x:(lon-minLon)/(maxLon-minLon)*W,y:H-(lat-minLat)/(maxLat-minLat)*H};}
+
+  ctx.fillStyle='#0d1a0d';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#0d1826';ctx.fillRect(0,0,proj(0,-117.175).x,H);
+  // Border hint
+  const by=proj(32.545,0).y;
+  ctx.fillStyle='rgba(180,140,60,0.06)';ctx.fillRect(0,by,W,H-by);
+  ctx.fillStyle='rgba(180,140,60,0.4)';ctx.font='9px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText('← Mexico / US border area',proj(32.543,-117.19).x,by+12);
+
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=0.5;
+  for(let la=32.52;la<=32.62;la+=0.02){
+    const p=proj(la,minLon),p2=proj(la,maxLon);
+    ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();
+    ctx.fillStyle='rgba(100,116,139,0.6)';ctx.font='9px IBM Plex Mono';ctx.textAlign='left';
+    ctx.fillText(la.toFixed(2)+'°N',3,p.y-2);
+  }
+  for(let lo=-117.20;lo<=-117.00;lo+=0.05){
+    const p=proj(minLat,lo),p2=proj(maxLat,lo);
+    ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();
+    ctx.fillStyle='rgba(100,116,139,0.6)';ctx.font='9px IBM Plex Mono';ctx.textAlign='center';
+    ctx.fillText(Math.abs(lo).toFixed(2)+'°W',p.x,H-3);
+  }
+
+  // River glow
+  ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.lineWidth=20;ctx.strokeStyle='rgba(16,185,129,0.08)';
+  ctx.beginPath();RIVER.forEach((pt,i)=>{const p=proj(pt.lat,pt.lon);i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});ctx.stroke();
+  ctx.lineWidth=5;ctx.strokeStyle='rgba(16,185,129,0.5)';
+  ctx.beginPath();RIVER.forEach((pt,i)=>{const p=proj(pt.lat,pt.lon);i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});ctx.stroke();
+  ctx.restore();
+
+  // River label
+  const rl=proj(32.567,-117.118);
+  ctx.save();ctx.translate(rl.x,rl.y);ctx.rotate(-0.18);
+  ctx.fillStyle='rgba(16,185,129,0.7)';ctx.font='500 10px IBM Plex Mono';ctx.textAlign='center';
+  ctx.fillText('Tijuana River / Estuary',0,0);ctx.restore();
+
+  // Plume cones
+  const hsp=proj(HOTSPOT.lat,HOTSPOT.lon);
+  // Overnight cone (toward NNE ~20°)
+  const oc1=destPt(HOTSPOT.lat,HOTSPOT.lon,-5,5),oc2=destPt(HOTSPOT.lat,HOTSPOT.lon,45,5);
+  const op1=proj(oc1.lat,oc1.lon),op2=proj(oc2.lat,oc2.lon);
+  ctx.beginPath();ctx.moveTo(hsp.x,hsp.y);ctx.lineTo(op1.x,op1.y);ctx.lineTo(op2.x,op2.y);ctx.closePath();
+  ctx.fillStyle='rgba(239,68,68,0.07)';ctx.fill();
+  ctx.strokeStyle='rgba(239,68,68,0.35)';ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(239,68,68,0.6)';ctx.font='9px IBM Plex Mono';ctx.textAlign='center';
+  ctx.fillText('overnight plume',hsp.x,hsp.y-55);ctx.fillText('(→ NNE)',hsp.x,hsp.y-44);
+
+  // Afternoon cone from estuary (toward ENE 68°)
+  const ep={lat:32.568,lon:-117.128};const esp=proj(ep.lat,ep.lon);
+  const ac1=destPt(ep.lat,ep.lon,46,9),ac2=destPt(ep.lat,ep.lon,90,9);
+  const ap1=proj(ac1.lat,ac1.lon),ap2=proj(ac2.lat,ac2.lon);
+  ctx.beginPath();ctx.moveTo(esp.x,esp.y);ctx.lineTo(ap1.x,ap1.y);ctx.lineTo(ap2.x,ap2.y);ctx.closePath();
+  ctx.fillStyle='rgba(16,185,129,0.08)';ctx.fill();
+  ctx.strokeStyle='rgba(16,185,129,0.4)';ctx.lineWidth=1.2;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(16,185,129,0.6)';ctx.font='9px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText('afternoon plume',ap1.x+4,ap1.y+8);ctx.fillText('(WSW → ENE)',ap1.x+4,ap1.y+19);
+
+  // Back-rays
+  SENSORS_MAP.filter(d=>d.pm>0).forEach(d=>{
+    const re=destPt(d.lat,d.lon,248,10);
+    const p0=proj(d.lat,d.lon),p1=proj(re.lat,re.lon);
+    ctx.strokeStyle=`rgba(148,163,184,${Math.min(0.45,0.07+d.pm/160)})`;
+    ctx.lineWidth=Math.max(0.6,d.pm/40);ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);ctx.stroke();
+  });ctx.setLineDash([]);
+
+  // Sensors
+  SENSORS_MAP.forEach(d=>{
+    const p=proj(d.lat,d.lon);
+    if(p.x<-10||p.x>W+10||p.y<-10||p.y>H+10)return;
+    const r=Math.max(5,Math.sqrt(Math.max(d.pm,1))*1.9);
+    const col=d.pm>50?'#ef4444':d.pm>20?'#f59e0b':d.pm>5?'#60a5fa':'#34d399';
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);
+    ctx.fillStyle=col+'aa';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#cbd5e1';ctx.font=`${Math.max(9,9+d.pm/55)}px IBM Plex Mono`;ctx.textAlign='left';
+    ctx.fillText(d.s+(d.ph?` (${d.ph}h)`:''),p.x+r+3,p.y+3);
+    hits.push({x:p.x,y:p.y,r:Math.max(r,8),label:d.s,detail:`Peak: ${d.pm} µg/m³ @ ${d.ph||'?'}:00\nBack-ray → Tijuana River corridor`});
+  });
+
+  // Hotspot
+  ctx.beginPath();ctx.arc(hsp.x,hsp.y,12,0,Math.PI*2);
+  ctx.fillStyle='rgba(239,68,68,0.2)';ctx.fill();ctx.strokeStyle='#ef4444';ctx.lineWidth=2.5;ctx.stroke();
+  ctx.strokeStyle='#ef4444';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(hsp.x-7,hsp.y-7);ctx.lineTo(hsp.x+7,hsp.y+7);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(hsp.x+7,hsp.y-7);ctx.lineTo(hsp.x-7,hsp.y+7);ctx.stroke();
+  ctx.fillStyle='#fca5a5';ctx.font='500 10px IBM Plex Mono';ctx.textAlign='right';
+  ctx.fillText('Known hotspot',hsp.x-15,hsp.y-4);
+  ctx.fillStyle='rgba(252,165,165,0.6)';ctx.font='9px IBM Plex Mono';
+  ctx.fillText('32°33\'33"N · Tijuana River',hsp.x-15,hsp.y+8);
+  hits.push({x:hsp.x,y:hsp.y,r:12,label:'Known pollution hotspot',detail:'32.559°N, 117.093°W\nH₂S generation in Tijuana River\n0.45 mi from trailer\nOvernigh pulse → AG-19 peak at 2am'});
+
+  // Estuary dot
+  const epp=proj(ep.lat,ep.lon);
+  ctx.beginPath();ctx.arc(epp.x,epp.y,6,0,Math.PI*2);
+  ctx.fillStyle='rgba(16,185,129,0.4)';ctx.fill();ctx.strokeStyle='#10b981';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='rgba(110,231,183,0.7)';ctx.font='9px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText('Estuary (bearing 275°)',epp.x+10,epp.y+4);
+  hits.push({x:epp.x,y:epp.y,r:8,label:'Tijuana River Estuary',detail:'~32.568°N, 117.128°W\nBearing 275° from trailer\nAligns with WSW wind (248°)\nDrives afternoon PM2.5 peaks'});
+
+  // Trailer
+  const tp=proj(TRAILER.lat,TRAILER.lon);
+  ctx.beginPath();ctx.arc(tp.x,tp.y,9,0,Math.PI*2);
+  ctx.fillStyle='#D85A30';ctx.fill();ctx.strokeStyle='#712B13';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#e2e8f0';ctx.font='10px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText('Trailer',tp.x+12,tp.y+4);
+  hits.push({x:tp.x,y:tp.y,r:9,label:'Quant AQ Trailer',detail:'32.5654°N, 117.0905°W\nH₂S: 946 ppb @ 1am, 535 ppb @ 7am\nCo-located with AG-19'});
+
+  // Wind arrow
+  const wx=52,wy=H-52,al=24,sa=((68-90)*Math.PI/180);
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(wx,wy);ctx.lineTo(wx+Math.cos(sa)*al,wy+Math.sin(sa)*al);ctx.stroke();
+  const ex=wx+Math.cos(sa)*al,ey=wy+Math.sin(sa)*al;
+  const ang=Math.atan2(ey-wy,ex-wx);
+  ctx.beginPath();ctx.moveTo(ex,ey);
+  ctx.lineTo(ex-8*Math.cos(ang-0.4),ey-8*Math.sin(ang-0.4));
+  ctx.lineTo(ex-8*Math.cos(ang+0.4),ey-8*Math.sin(ang+0.4));
+  ctx.closePath();ctx.fillStyle='#94a3b8';ctx.fill();
+  ctx.fillStyle='#64748b';ctx.font='9px IBM Plex Mono';ctx.textAlign='center';
+  ctx.fillText('→ ENE',wx,wy-10);ctx.fillText('248° WSW',wx,wy-20);
+
+  // Scale
+  const sb0=proj(32.515,-117.21),sb1=proj(32.515,-117.17);
+  ctx.strokeStyle='#475569';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(sb0.x,sb0.y);ctx.lineTo(sb1.x,sb1.y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sb0.x,sb0.y-3);ctx.lineTo(sb0.x,sb0.y+3);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sb1.x,sb1.y-3);ctx.lineTo(sb1.x,sb1.y+3);ctx.stroke();
+  ctx.fillStyle='#475569';ctx.font='9px IBM Plex Mono';ctx.textAlign='center';
+  ctx.fillText('≈ 2 mi',(sb0.x+sb1.x)/2,sb0.y+13);
+}
+
+drawMap();
+window.addEventListener('resize',drawMap);
+mapCanvas.addEventListener('mousemove',e=>{
+  const r=mapCanvas.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  let hit=null;for(const t of hits){if(Math.hypot(mx-t.x,my-t.y)<=t.r+5){hit=t;break;}}
+  if(hit){
+    mapTip.style.display='block';mapTip.style.left=(mx+14)+'px';mapTip.style.top=(my-10)+'px';
+    mapTip.innerHTML='<b>'+hit.label+'</b><br>'+hit.detail.replace(/\n/g,'<br>');
+    mapCanvas.style.cursor='pointer';
+  }else{mapTip.style.display='none';mapCanvas.style.cursor='default';}
+});
+mapCanvas.addEventListener('mouseleave',()=>mapTip.style.display='none');
+
+// ────────────────────────────────────────────────────────────
+// SURVEY CARDS
+// ────────────────────────────────────────────────────────────
+const ORDER=['AG-15','AG-7','AG-9','AG-11','AG-12','AG-3','AG-2','AG-10','AG-5'];
+const grid=document.getElementById('survey-grid');
+ORDER.forEach(sn=>{
+  const sv=SURVEY_DATA[sn];
+  const p=PARAMS.find(d=>d.s===sn);
+  if(!sv||!p)return;
+  const lvl=p.pm>35?'high':p.pm>10?'mid':'low';
+  const tags=[];
+  if(sv.stove==='Gas'&&!sv.exhaust) tags.push({t:'gas, no exhaust',c:'risk'});
+  else if(sv.stove==='Gas') tags.push({t:'gas + exhaust',c:'neutral'});
+  else tags.push({t:'electric stove',c:'protect'});
+  if(sv.smoker) tags.push({t:'smoker household',c:'risk'});
+  if(sv.window_h>=16) tags.push({t:`${sv.window_h}h windows/day`,c:'risk'});
+  else if(sv.window_h>=4) tags.push({t:`${sv.window_h}h windows/day`,c:'neutral'});
+  else tags.push({t:`${sv.window_h}h windows/day`,c:'protect'});
+  if(sv.purifier) tags.push({t:'air purifier',c:'protect'});
+  else tags.push({t:'no purifier',c:'risk'});
+  if(sv.ac==='Central AC') tags.push({t:'central AC',c:'protect'});
+  tags.push({t:sv.building,c:'neutral'},{t:`${sv.occupants} occupants`,c:'neutral'});
+
+  const card=document.createElement('div');
+  card.className=`s-card ${lvl}`;
+  card.innerHTML=`
+    <div class="s-card-head">
+      <span class="s-card-sensor">${sn}</span>
+      <span class="s-card-peak">${p.pm} µg/m³ · ${p.ph}:00</span>
+    </div>
+    <div class="s-tags">${tags.map(t=>`<span class="s-tag ${t.c}">${t.t}</span>`).join('')}</div>
+    <div class="s-insight">${sv.insight}</div>`;
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>
